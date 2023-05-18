@@ -9,10 +9,10 @@ class GamePage extends StatefulWidget {
   const GamePage({Key? key}) : super(key: key);
 
   @override
-  _GamePageState createState() => _GamePageState();
+  GamePageState createState() => GamePageState();
 }
 
-class _GamePageState extends State<GamePage> {
+class GamePageState extends State<GamePage> {
   List<CardData> cards = [];
   int correctCards = 4;
   int maxCards = 40;
@@ -20,13 +20,12 @@ class _GamePageState extends State<GamePage> {
   int lives = 3;
   List<int> locations = [];
   int nextCardNumber = 1;
-  bool isCorrectCardTapped = false;
+  bool isGameStarted = false;
 
   @override
   void initState() {
     super.initState();
     resetGame();
-    
   }
 
   @override
@@ -37,7 +36,7 @@ class _GamePageState extends State<GamePage> {
         backgroundColor: AppColors.turquoise,
         elevation: 0,
         title: Text(
-          'Memory Game',
+          lives > 0 ? 'Lives: $lives' : 'Game Over',
           style: Theme.of(context)
               .textTheme
               .headline6
@@ -50,44 +49,61 @@ class _GamePageState extends State<GamePage> {
   }
 
   void onCardTapped(int cardNumber) {
-  bool isCorrectCardTapped = false;
-  int tappedCardIndex = -1;
+    bool isCorrectCardTapped = false;
+    int tappedCardIndex = -1;
 
-  for (int i = 0; i < cards.length; i++) {
-    if (cards[i].number == cardNumber && cards[i].isVisible) {
-      isCorrectCardTapped = true;
-      tappedCardIndex = i;
-      break;
-    }
-  }
+    if (cards.isNotEmpty) {
+      int smallestIndex = cards
+          .where((card) => card.isVisible)
+          .map((card) => card.number)
+          .reduce((minValue, value) => minValue < value ? minValue : value);
 
-  if (isCorrectCardTapped) {
-    cards[tappedCardIndex].isVisible = false;
-    int correctCardCount = cards.where((card) => !card.isVisible).length;
-    if (correctCardCount == cards.length) {
-      correctCards++;
-      resetGame();
+      if (cardNumber == smallestIndex) {
+        isCorrectCardTapped = true;
+        tappedCardIndex = cards.indexWhere(
+            (card) => card.isVisible && card.number == smallestIndex);
+      }
     }
-  } else {
-    lives--;
-    if (lives <= 0) {
-      showGameOverPopup();
+
+    if (isCorrectCardTapped) {
+      isGameStarted = true;
+      cards.removeAt(tappedCardIndex);
+      int correctCardCount = correctCards - cards.length;
+      if (correctCardCount == correctCards) {
+        correctCards++;
+        goNextStage();
+      }
     } else {
-      resetVisibleState();
+      lives--;
+      if (lives <= 0) {
+        showGameOverPopup();
+      } else {
+        resetCurrentStage();
+      }
+    }
+
+    setState(() {});
+  }
+
+  void resetVisibleState() {
+    for (int i = 0; i < cards.length; i++) {
+      cards[i].isVisible = true;
     }
   }
 
-  setState(() {});
-}
-
-void resetVisibleState() {
-  for (int i = 0; i < cards.length; i++) {
-    cards[i].isVisible = true;
+  void resetCurrentStage() {
+    isGameStarted = false;
+    cards = generateCards();
+    resetVisibleState();
   }
-}
 
+  void goNextStage() {
+    isGameStarted = false;
+    cards = generateCards();
+    resetVisibleState();
+  }
 
-
+  
 
   void showGameOverPopup() {
     showDialog(
@@ -110,6 +126,7 @@ void resetVisibleState() {
   }
 
   void resetGame() {
+    isGameStarted = false;
     nextCardNumber = 1;
     lives = maxLives;
     cards = generateCards();
@@ -155,33 +172,40 @@ void resetVisibleState() {
         crossAxisSpacing: 16,
       ),
       itemBuilder: (context, index) {
-        CardData card = cards.firstWhere((card) => card.location == index,
-            orElse: () => CardData(number: 0, location: -1, isVisible: false));
-
-        return GestureDetector(
-          onTap: () => onCardTapped(card.number),
-          child: Container(
-            decoration: BoxDecoration(
-              color: card.isVisible ? Colors.white : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: card.isVisible ? Colors.transparent : Colors.white,
-                width: 2,
-              ),
-            ),
-            child: Center(
-              child: Text(
-                card.isVisible ? '${card.number}' : '',
-                style: Theme.of(context).textTheme.headline6?.copyWith(
-                      color: card.isVisible
-                          ? Colors.deepPurple.shade800
-                          : Colors.white,
-                    ),
-              ),
-            ),
-          ),
+        CardData card = cards.firstWhere(
+          (card) => card.location == index,
+          orElse: () => CardData(number: 0, location: -1, isVisible: false),
         );
+
+        return buildCardView(card, context);
       },
     );
+  }
+
+  Widget buildCardView(CardData card, BuildContext context) {
+    if (card.isVisible) {
+      return InkWell(
+        onTap: () => onCardTapped(card.number),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Center(
+            child: Text(
+              isGameStarted ? '' : card.number.toString(),
+              style: Theme.of(context).textTheme.headline6,
+            ),
+          ),
+        ),
+      );
+    } else {
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+      );
+    }
   }
 }
