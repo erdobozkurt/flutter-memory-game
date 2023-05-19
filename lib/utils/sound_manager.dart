@@ -1,6 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
 
-
 class SoundManager {
   static final SoundManager _instance = SoundManager._internal();
 
@@ -18,5 +17,13 @@ class SoundManager {
   // play wrong sound
   Future<void> playWrongSound() async {
     await _audioPlayer.play(AssetSource('wrong_tap.flac'));
+  }
+
+  void dispose() {
+    _audioPlayer.dispose();
+  }
+
+  void release() {
+    _audioPlayer.release();
   }
 }

@@ -1,6 +1,5 @@
 import 'dart:math';
 
-
 import 'package:flutter/material.dart';
 import 'package:flutter_memory_game/constants/app_colors.dart';
 import 'package:flutter_memory_game/utils/sound_manager.dart';
@@ -15,7 +14,7 @@ class GamePage extends StatefulWidget {
 }
 
 class GamePageState extends State<GamePage> {
-  final SoundManager soundManager = SoundManager();
+  late SoundManager soundManager;
   List<CardData> cards = [];
   int correctCards = 4;
   int maxCards = 40;
@@ -27,7 +26,14 @@ class GamePageState extends State<GamePage> {
   @override
   void initState() {
     super.initState();
+    soundManager = SoundManager();
     resetGame();
+  }
+
+  @override
+  void dispose() {
+    soundManager.release();
+    super.dispose();
   }
 
   @override
@@ -114,6 +120,8 @@ class GamePageState extends State<GamePage> {
         content: const Text('You have lost the game.'),
         actions: [
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.deepPurple.shade800),
             onPressed: () {
               resetGame();
               Navigator.pop(context);
@@ -215,7 +223,4 @@ class GamePageState extends State<GamePage> {
   String isZero(int number) {
     return number == 0 ? '' : number.toString();
   }
-
-
-
 }

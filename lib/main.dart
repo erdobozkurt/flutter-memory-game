@@ -8,16 +8,15 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Memory Game',
       theme: ThemeData(
         textTheme: GoogleFonts.montserratTextTheme(),
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.deepPurple,
       ),
       debugShowCheckedModeBanner: false,
       home: const HomePage(),
@@ -29,4 +28,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
