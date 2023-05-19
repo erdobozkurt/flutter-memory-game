@@ -1,7 +1,9 @@
 import 'dart:math';
 
+
 import 'package:flutter/material.dart';
 import 'package:flutter_memory_game/constants/app_colors.dart';
+import 'package:flutter_memory_game/utils/sound_manager.dart';
 
 import '../models/cards_model.dart';
 
@@ -13,13 +15,13 @@ class GamePage extends StatefulWidget {
 }
 
 class GamePageState extends State<GamePage> {
+  final SoundManager soundManager = SoundManager();
   List<CardData> cards = [];
   int correctCards = 4;
   int maxCards = 40;
   int maxLives = 3;
   int lives = 3;
   List<int> locations = [];
-  int nextCardNumber = 1;
   bool isGameStarted = false;
 
   @override
@@ -31,16 +33,14 @@ class GamePageState extends State<GamePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.turquoise,
+      backgroundColor: AppColors.linkWater,
       appBar: AppBar(
-        backgroundColor: AppColors.turquoise,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
           lives > 0 ? 'Lives: $lives' : 'Game Over',
-          style: Theme.of(context)
-              .textTheme
-              .headline6
-              ?.copyWith(color: Colors.deepPurple.shade800),
+          style: Theme.of(context).textTheme.headline6?.copyWith(
+              color: Colors.deepPurple.shade800, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
@@ -66,6 +66,7 @@ class GamePageState extends State<GamePage> {
     }
 
     if (isCorrectCardTapped) {
+      soundManager.playCorrectSound();
       isGameStarted = true;
       cards.removeAt(tappedCardIndex);
       int correctCardCount = correctCards - cards.length;
@@ -74,6 +75,7 @@ class GamePageState extends State<GamePage> {
         goNextStage();
       }
     } else {
+      soundManager.playWrongSound();
       lives--;
       if (lives <= 0) {
         showGameOverPopup();
@@ -103,8 +105,6 @@ class GamePageState extends State<GamePage> {
     resetVisibleState();
   }
 
-  
-
   void showGameOverPopup() {
     showDialog(
       context: context,
@@ -127,9 +127,13 @@ class GamePageState extends State<GamePage> {
 
   void resetGame() {
     isGameStarted = false;
-    nextCardNumber = 1;
+    correctCards = 4;
+
     lives = maxLives;
     cards = generateCards();
+    setState(() {
+      resetVisibleState();
+    });
   }
 
   List<CardData> generateCards() {
@@ -183,9 +187,12 @@ class GamePageState extends State<GamePage> {
   }
 
   Widget buildCardView(CardData card, BuildContext context) {
-    if (card.isVisible) {
-      return InkWell(
-        onTap: () => onCardTapped(card.number),
+    return AnimatedOpacity(
+      opacity: card.isVisible ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeIn,
+      child: InkWell(
+        onTap: () => card.isVisible ? onCardTapped(card.number) : null,
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -193,19 +200,22 @@ class GamePageState extends State<GamePage> {
           ),
           child: Center(
             child: Text(
-              isGameStarted ? '' : card.number.toString(),
-              style: Theme.of(context).textTheme.headline6,
+              isGameStarted ? '' : isZero(card.number),
+              style: Theme.of(context).textTheme.headline6?.copyWith(
+                    color: Colors.deepPurple.shade800,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
           ),
         ),
-      );
-    } else {
-      return Container(
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-      );
-    }
+      ),
+    );
   }
+
+  String isZero(int number) {
+    return number == 0 ? '' : number.toString();
+  }
+
+
+
 }
