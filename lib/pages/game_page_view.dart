@@ -3,8 +3,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_memory_game/constants/app_colors.dart';
 import 'package:flutter_memory_game/utils/sound_manager.dart';
-
 import '../models/cards_model.dart';
+import '../utils/shared_prefs_manager.dart';
 
 class GamePage extends StatefulWidget {
   const GamePage({Key? key}) : super(key: key);
@@ -22,12 +22,14 @@ class GamePageState extends State<GamePage> {
   int lives = 3;
   List<int> locations = [];
   bool isGameStarted = false;
+  int? topScore;
 
   @override
   void initState() {
     super.initState();
     soundManager = SoundManager();
     resetGame();
+    loadTopScore();
   }
 
   @override
@@ -43,10 +45,24 @@ class GamePageState extends State<GamePage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(
-          lives > 0 ? 'Lives: $lives' : 'Game Over',
-          style: Theme.of(context).textTheme.headline6?.copyWith(
-              color: Colors.deepPurple.shade800, fontWeight: FontWeight.bold),
+        title: Row(
+          children: [
+            Text(
+              lives > 0 ? 'Lives: $lives' : 'Game Over',
+              style: Theme.of(context)
+                  .textTheme
+                  .headline6
+                  ?.copyWith(color: Colors.deepPurple.shade800),
+            ),
+            const Spacer(),
+            Text(
+              'Top Score: ${topScore ?? 0}',
+              style: Theme.of(context)
+                  .textTheme
+                  .headline6
+                  ?.copyWith(color: Colors.deepPurple.shade800),
+            ),
+          ],
         ),
         centerTitle: true,
       ),
@@ -107,6 +123,7 @@ class GamePageState extends State<GamePage> {
 
   void goNextStage() {
     isGameStarted = false;
+    checkNewRecord(correctCards);
     cards = generateCards();
     resetVisibleState();
   }
@@ -222,5 +239,22 @@ class GamePageState extends State<GamePage> {
 
   String isZero(int number) {
     return number == 0 ? '' : number.toString();
+  }
+
+  Future<void> loadTopScore() async {
+    int? score = await SharedPreferencesManager.getTopScore();
+    setState(() {
+      topScore = score;
+    });
+  }
+
+  void checkNewRecord(int currentScore) {
+    if (topScore == null || currentScore > topScore!) {
+      SharedPreferencesManager.saveTopScore(currentScore);
+      loadTopScore();
+      setState(() {
+        topScore = currentScore;
+      });
+    }
   }
 }
